@@ -1,0 +1,4 @@
+#* * * * * cd /usr/local/bin/bot/multi_signals_binance_bot/cron && python3 cron_test.py
+05 3 * * * cd /usr/local/bin/bot/bar_pattern_bot && python3 main.py
+00 9 * * * cd /usr/local/bin/bot/bar_pattern_bot && python3 send_signal.py
+00 0 * * * cd /usr/local/bin/bot/bar_pattern_bot && python3 send_signal.py
