@@ -55,7 +55,7 @@ def check_history_bars_for_pinbar_pattern(pair: str, bars: list) -> str:
         low[1] + cl[1] > high[1] + cl[1] and high[1] != op[1] and low[1] < low[0] and cl[0] < op[0]:
         return "Pin Long Red"
 
-    return "Pin Test"
+    return ""
 
 
 def get_day_price_move(pair, last_hour_bar):
