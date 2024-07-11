@@ -172,7 +172,8 @@ def store_signals_to_file(signals_data: dict, pattern_name: str):
 
 def load_futures_history_bars_end(responce_list):
     signals_pinbar = dict()
-
+    if responce_list is None:
+        return
     for responce in responce_list:
         id = responce['id']
         del responce['id']

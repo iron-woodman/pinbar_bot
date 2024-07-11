@@ -63,7 +63,8 @@ def process_signal(signal_folder_name, current_date):
         for pattern in signal_data:
             signal_str = f'{pattern}:\n'
             coin_list = signal_data[pattern]
-            for coin in coin_list:
+            sorted_coin_list = sorted(coin_list)
+            for coin in sorted_coin_list:
                 signal_str += f'{coin}\n'
             send_signal(signal_str, TLG_TOKEN, TLG_CHANNEL_ID)
             time.sleep(1)
