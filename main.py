@@ -13,13 +13,14 @@ from send_all_signals import process_signal
 THREAD_CNT = 1  # 3 потока на ядро
 DAY_OPEN_PRICES = dict()
 
+
 def check_history_bars_for_pinbar_pattern(pair: str, bars: list) -> str:
     """
     Поиск свечного паттерна в барах истории
     :param bars:
     :return:
     """
-    if len(bars) < 2:
+    if len(bars) < 3:
         print(f'{pair}: Bar count = {len(bars)}.')
         return ""
     _time = []
@@ -40,21 +41,58 @@ def check_history_bars_for_pinbar_pattern(pair: str, bars: list) -> str:
         vol.append(float(bar[5]))
 
     # проверяем значения на паттерны
-    if vol[0] >= vol[1] or op[1] == cl[1]: # объем последней свечи должен быть больше чем объем предудыщей свечи
-        return ""
-    if cl[1] > op[1] and cl[1] + high[1] > op[1] + low[1] and op[1] + low[1] > op[1] + cl[1] and \
-        high[1] + cl[1] > low[1] + cl[1] and low[1] != op[1]  and high[1] > high[0] and cl[0] > op[0]:
-        return "Pin Short Green"
-    elif cl[1] < op[1] and op[1] + high[1] > cl[1] + low[1] and cl[1] + low[1] > op[1] + cl[1] and \
-        high[1] + op[1] > low[1] + op[1] and low[1] != cl[1] and high[1] > high[0] and cl[0] > op[0]:
-        return "Pin Short Red"
-    elif cl[1] > op[1] and op[1] + low[1] > cl[1] + high[1] and op[1] + low[1] > op[1] + cl[1] and \
-        low[1] + op[1] > high[1] + op[1] and high[1] != cl[1] and low[1] < low[0] and cl[0] < op[0]:
-        return "Pin Long Green"
-    elif cl[1] < op[1] and cl[1] + low[1] > op[1] + high[1] and op[1] + low[1] > op[1] + cl[1] and \
-        low[1] + cl[1] > high[1] + cl[1] and high[1] != op[1] and low[1] < low[0] and cl[0] < op[0]:
-        return "Pin Long Red"
+    if vol[1] <= vol[0] or op[1] == cl[1]:  # объем последней свечи должен быть больше чем объем предудыщей свечи
+        return ""  # и цена закрытия должна быть не равна цене открытия
 
+
+    # Pin Short Green conditions
+    pin_short_green_c1 = cl[1] > op[1] # закрытие больше открытия
+    pin_short_green_c2 = high[1] - cl[1] > op[1] - low[1]  # верхний хвост длинее нижнего
+    pin_short_green_c3 = op[1] - low[1] > cl[1] - op[1]    # нижни йхвост длинее тела свечи
+    pin_short_green_c4 = high[1] - cl[1] > cl[1] - low[1]  # верхний хвост длиннее нижнего и тела свечи
+    pin_short_green_c5 = low[1] != op[1] # минимум не равен открытию
+    pin_short_green_c7 = high[1] > high[0] # максимум больше максимума предыдущей свечи
+    pin_short_green_c8 = cl[0] > op[0]     # предыдущая свеча была зеленой
+
+    # Pin Short Red conditions
+    pin_short_red_c1 = cl[1] < op[1] # красная свеча
+    pin_short_red_c2 = high[1] - op[1] > cl[1] - low[1] # верхний хвост длиннее чем нижний
+    pin_short_red_c3 = cl[1] - low[1] > op[1] - cl[1] # нижний хвост длиннее тела свечи
+    pin_short_red_c4 = high[1] - op[1] > op[1] - low[1] # верхний хвост длиннее чем тело + нижний хвост
+    pin_short_red_c5 = low[1] != cl[1] # минимум не равен закрытию
+    pin_short_red_c7 = high[1] > high[0]
+    pin_short_red_c8 = cl[0] > op[0]
+
+    # Pin Long Green conditions
+    pin_long_green_c1 = cl[1] > op[1] # зеленая свеча
+    pin_long_green_c2 = high[1] - cl[1] < op[1] - low[1] # верхний хвост короче чем нижний хвост
+    pin_long_green_c3 = high[1] - cl[1] > cl[1] - op[1] # верхний хвост длинее тела свечи
+    pin_long_green_c4 = op[1] - low[1] > high[1] - op[1] # нижний хвост длиннее верхнего хвоста и тела свечи
+    pin_long_green_c5 = high[1] != cl[1] # максимум не равен закрытию
+    pin_long_green_c7 = low[1] < low[0] # минимум меньше минимума предыдущей свечи
+    pin_long_green_c8 = cl[0] < op[0] # до этого была  так же красная свеча
+
+    # Pin Long Red conditions
+    pin_long_red_c1 = cl[1] < op[1]  # красная свеча
+    pin_long_red_c2 = high[1] - op[1] < cl[1] - low[1]  # верхний хвост короче чем нижний хвост
+    pin_long_red_c3 = high[1] - op[1] > op[1] - cl[1]  # верхний хвост длинее тела свечи
+    pin_long_red_c4 = cl[1] - low[1] > high[1] - cl[1]  # нижний хвост длиннее верхнего хвоста и тела свечи
+    pin_long_red_c5 = high[1] != op[1]  # максимум не равен открытию
+    pin_long_red_c7 = low[1] < low[0]  # минимум меньше минимума предыдущей свечи
+    pin_long_red_c8 = cl[0] < op[0]  # до этого была так же красная свеча
+
+    if pin_short_green_c1 and pin_short_green_c2 and pin_short_green_c3 and pin_short_green_c4 and pin_short_green_c5 \
+            and pin_short_green_c7 and pin_short_green_c8:
+        return "Pin Short Green"
+    elif pin_short_red_c1 and pin_short_red_c2 and pin_short_red_c3 and pin_short_red_c4 and pin_short_red_c5 \
+            and pin_short_red_c7 and pin_short_red_c8:
+        return "Pin Short Red"
+    elif pin_long_green_c1 and pin_long_green_c2 and pin_long_green_c3 and pin_long_green_c4 and pin_long_green_c5 \
+            and pin_long_green_c7 and pin_long_green_c8:
+        return "Pin Long Green"
+    elif pin_long_red_c1 and pin_long_red_c2 and pin_long_red_c3 and pin_long_red_c4 and pin_long_red_c5 \
+            and pin_long_red_c7 and pin_long_red_c8:
+        return "Pin Long Red"
     return ""
 
 
@@ -66,11 +104,9 @@ def get_day_price_move(pair, last_hour_bar):
     if pair in DAY_OPEN_PRICES:
         day_open = DAY_OPEN_PRICES[pair]
         bar_close = float(last_hour_bar[4])
-        move = abs(day_open-bar_close) * 100 / day_open
+        move = abs(day_open - bar_close) * 100 / day_open
         return move
     return 0
-
-
 
 
 def load_history_bars(task):
@@ -92,7 +128,7 @@ def load_history_bars(task):
             if timeframe == '1d':
                 st_time = "4 day ago UTC"
             if timeframe == '1h':
-                st_time = "2 hour ago UTC"
+                st_time = "3 hour ago UTC"
             else:
                 print('Unknown timeframe:', timeframe)
                 custom_logging.error(f'Load history bars error: unknown timeframe "{timeframe}"')
@@ -166,7 +202,12 @@ def load_open_prices() -> dict:
 
 
 if __name__ == '__main__':
-    futures_list = load_futures_list()
+    test = False
+    futures_list = ['ZECUSDT']
+    if not test:
+        futures_list = load_futures_list()
+
+
 
     # if len(DAY_OPEN_PRICES) == 0:
     #     custom_logging.error(f"Day open prices not loaded. Script closed.")

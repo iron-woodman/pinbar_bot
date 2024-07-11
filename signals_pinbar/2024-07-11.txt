@@ -1,0 +1,7 @@
+{
+    "Pin Short Green": [
+        "NEARUSDT",
+        "1000SHIBUSDT",
+        "XAIUSDT"
+    ]
+}
