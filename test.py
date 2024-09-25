@@ -1,18 +1,7 @@
-import json
-import os
-from send_all_signals import process_signal
-import datetime
+from src.binance_api import load_futures_list
+from src.telegram_api import send_signal
+from src.config_handler import TLG_TOKEN, TLG_CHANNEL_ID
 
 
-def load_open_prices():
-    open_prices = dict()
-    for element in os.scandir('day_open_price'):
-        if element.is_file():
-            if '.txt' in element.name:
-                with open(f'day_open_price/{element.name}', 'r', encoding='utf-8') as f:
-                    open_prices = json.load(f)
-    return open_prices
-
-
-cur_date = datetime.date.today().isoformat()
-process_signal('signals_pinbar', cur_date)
+futures_list = load_futures_list()
+send_signal(f"Загружен список фьючерсов ({len(futures_list)} шт.)", TLG_TOKEN, TLG_CHANNEL_ID)
